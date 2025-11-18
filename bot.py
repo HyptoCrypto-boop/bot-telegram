@@ -159,5 +159,26 @@ def main():
     print("🤖 Bot funcionando…")
     app.run_polling()
 
+# --- keep-alive web server (no cambia la lógica del bot) ---
+# Añádelo al final de tu bot.py, antes de if __name__ == "__main__": main()
+import threading
+from flask import Flask
+
+app_keep = Flask("keepalive")
+
+@app_keep.route("/")
+def index():
+    return "OK", 200
+
+def run_keepalive():
+    port = int(os.environ.get("PORT", 3000))
+    app_keep.run(host="0.0.0.0", port=port)
+
+# Si el archivo se ejecuta en Replit (o cualquier host), esto lanza el servidor en background
+t = threading.Thread(target=run_keepalive)
+t.daemon = True
+t.start()
+# ----------------------------------------------------------
+
 if __name__ == "__main__":
     main()
