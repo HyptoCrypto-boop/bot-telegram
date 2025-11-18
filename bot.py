@@ -1,6 +1,7 @@
+import os
+import json
 import gspread
 from gspread_formatting import *
-from oauth2client.service_account import ServiceAccountCredentials
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -14,9 +15,13 @@ import asyncio
 # CONFIG GOOGLE SHEETS
 # ============================
 
-SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-CREDS = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", SCOPE)
-CLIENT = gspread.authorize(CREDS)
+# Coger el JSON de credenciales desde variable de entorno
+CREDS_JSON = os.environ.get("GOOGLE_CREDS_JSON")
+if not CREDS_JSON:
+    raise ValueError("No se ha definido la variable de entorno GOOGLE_CREDS_JSON")
+
+creds_dict = json.loads(CREDS_JSON)
+CLIENT = gspread.service_account_from_dict(creds_dict)
 
 SPREADSHEET_NAME = "Cuentas telegram"
 SHEET_NAME = "Hoja 1"
@@ -47,7 +52,6 @@ def color_fila(fila, color):
 # TRACKING DE CUENTAS POR USUARIO
 # ============================
 
-# { username_telegram: [ { "fila": fila, "cuenta": cuenta }, ... ] }
 filas_usuario = {}
 
 # ============================
@@ -73,7 +77,6 @@ async def pedir_cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE):
         estado = values[COL_ESTADO - 1].strip().lower()
         pais = values[COL_PAIS - 1].strip()
 
-        # Solo cuentas libres y no LATAM
         if estado == "libre" and pais.upper() != "LATAM":
             cuenta = values[COL_USER - 1]
             password = values[COL_PASS - 1]
@@ -81,15 +84,12 @@ async def pedir_cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass_correo = values[COL_MAILPASS - 1]
             pais_text = pais if pais else "Desconocido"
 
-            # Guardamos la fila y cuenta asignada
             filas_usuario.setdefault(user_name, []).append({"fila": row_number, "cuenta": cuenta})
 
-            # Actualizamos Google Sheets
             await asyncio.to_thread(sheet.update_cell, row_number, COL_ESTADO, "FUNCIONA")
             await asyncio.to_thread(sheet.update_cell, row_number, COL_STREAMER, f"@{user_name}")
             await asyncio.to_thread(color_fila, row_number, GREEN)
 
-            # Crear botones inline
             keyboard = [
                 [
                     InlineKeyboardButton("❌ No Funciona", callback_data=f"NO_FUNCIONA|{cuenta}"),
@@ -146,7 +146,10 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ============================
 
 def main():
-    TOKEN = "8541112244:AAEjSmgfqiNVc-daTYx5spG1hi6dciQceBg"
+    TOKEN = os.environ.get("8541112244:AAEjSmgfqiNVc-daTYx5spG1hi6dciQceBg")
+    if not TOKEN:
+        raise ValueError("No se ha definido la variable de entorno TELEGRAM_TOKEN")
+
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
