@@ -146,7 +146,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ============================
 
 def main():
-    TOKEN = os.environ.get("8541112244:AAEjSmgfqiNVc-daTYx5spG1hi6dciQceBg")
+    TOKEN = os.environ.get("TELEGRAM_TOKEN")
     if not TOKEN:
         raise ValueError("No se ha definido la variable de entorno TELEGRAM_TOKEN")
 
