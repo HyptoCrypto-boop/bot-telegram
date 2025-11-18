@@ -16,9 +16,9 @@ import asyncio
 # ============================
 
 # Coger el JSON de credenciales desde variable de entorno
-CREDS_JSON = os.environ.get("GOOGLE_CREDS_JSON")
+CREDS_JSON = os.environ.get("GOOGLE_CREDS")
 if not CREDS_JSON:
-    raise ValueError("No se ha definido la variable de entorno GOOGLE_CREDS_JSON")
+    raise ValueError("No se ha definido la variable de entorno GOOGLE_CREDS")
 
 creds_dict = json.loads(CREDS_JSON)
 CLIENT = gspread.service_account_from_dict(creds_dict)
